@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/common/log"
@@ -15,6 +16,7 @@ import (
 
 var (
 	appsToTopics *syncmap.Map
+	topicsToApps *syncmap.Map
 	topics       *syncmap.Map
 )
 
@@ -25,6 +27,7 @@ type MapRequest struct {
 
 func init() {
 	appsToTopics = &syncmap.Map{}
+	topicsToApps = &syncmap.Map{}
 	topics = &syncmap.Map{}
 }
 
@@ -43,8 +46,9 @@ func registerAppToTopic(w http.ResponseWriter, r *http.Request) {
 	}
 
 	appsToTopics.Store(mapRequest.App, mapRequest.Topic)
+	topicsToApps.Store(mapRequest.Topic, mapRequest.App)
 	topics.LoadOrStore(mapRequest.Topic, make(chan interface{}, 100))
-	log.Info(fmt.Sprintf("app '%s' registered on topic '%s'", mapRequest.App, mapRequest.Topic))
+	log.Infof("app '%s' registered on topic '%s'", mapRequest.App, mapRequest.Topic)
 
 	w.WriteHeader(http.StatusCreated)
 }
@@ -74,7 +78,7 @@ func postToTopic(w http.ResponseWriter, r *http.Request) {
 	topic := topicMapEntry.(chan interface{})
 	topic <- payload
 
-	log.Info(fmt.Sprintf("Wrote new value to topic '%s'", topicName))
+	log.Infof("Wrote new value to topic '%s'", topicName)
 
 	w.WriteHeader(http.StatusCreated)
 
@@ -105,7 +109,7 @@ func readFromTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Info(fmt.Sprintf("Data read from topic '%s'", topicName))
+	log.Infof("Data read from topic '%s'", topicName)
 	_, err = w.Write(payloadBytes)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error writing payload to http response - %s", err.Error()), http.StatusInternalServerError)
@@ -124,8 +128,29 @@ func logTopics() {
 	})
 }
 
+func autoscale() {
+	for {
+		topicsToApps.Range(func(key, value interface{}) bool {
+			topicName := key.(string)
+			appName := value.(string)
+
+			topic, _ := topics.Load(topicName)
+
+			numberOfInstances := len(topic.(chan interface{}))
+
+			scale(appName, numberOfInstances)
+
+			return true
+		})
+
+		time.Sleep(time.Second * 2)
+	}
+}
+
 func main() {
 	port := os.Getenv("PORT")
+
+	go autoscale()
 
 	rtr := mux.NewRouter()
 

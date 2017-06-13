@@ -1,16 +1,33 @@
-hash: 243323f21d0b8d8c352a631deadcea75c6f5040604136d002cd553e261486766
-updated: 2017-06-13T15:10:17.936148909-07:00
+hash: c123b4a97b20f22568025c4743a9b475d35217e400a1a6a66545a669e5d95aa1
+updated: 2017-06-13T15:47:53.920170268-07:00
 imports:
+- name: github.com/cloudfoundry-community/go-cfclient
+  version: ff512fbd27a850931d695ab8c37176aaa5ceecef
+- name: github.com/golang/protobuf
+  version: e325f446bebc2998605911c0a2650d9920361d4a
+  subpackages:
+  - proto
 - name: github.com/gorilla/context
   version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
 - name: github.com/gorilla/mux
   version: bcd8bc72b08df0f70df986b97f95590779502d31
+- name: github.com/pkg/errors
+  version: bfd5150e4e41705ded2129ec33379de1cb90b513
 - name: github.com/prometheus/common
   version: 13ba4ddd0caa9c28ca7b7bffe1dfa9ed8d5ef207
   subpackages:
   - log
 - name: github.com/Sirupsen/logrus
   version: 1deb2db2a6fff8a35532079061b903c3a25eed52
+- name: golang.org/x/net
+  version: 7dbad50ab5b31073856416cdcfeb2796d682f844
+  subpackages:
+  - context
+- name: golang.org/x/oauth2
+  version: 2baa8a1b9338cf13d9eeb27696d761155fa480be
+  subpackages:
+  - clientcredentials
+  - internal
 - name: golang.org/x/sync
   version: f52d1811a62927559de87708c8913c1650ce4f26
   subpackages:
@@ -22,4 +39,14 @@ imports:
   - windows
   - windows/registry
   - windows/svc/eventlog
+- name: google.golang.org/appengine
+  version: a2f4131514e563cedfdb6e7d267df9ad48591e93
+  subpackages:
+  - internal
+  - internal/base
+  - internal/datastore
+  - internal/log
+  - internal/remote_api
+  - internal/urlfetch
+  - urlfetch
 testImports: []
