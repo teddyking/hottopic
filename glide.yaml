@@ -3,3 +3,5 @@ import:
 - package: golang.org/x/sync
   subpackages:
   - syncmap
+- package: github.com/gorilla/mux
+  version: ^1.4.0

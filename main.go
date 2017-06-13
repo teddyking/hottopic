@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gorilla/mux"
+
 	"golang.org/x/sync/syncmap"
 )
 
@@ -40,7 +42,35 @@ func mapHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	appsToTopics[mapRequest.App] = mapRequest.Topic
-	topics.LoadOrStore(mapRequest.Topic, make(chan MapRequest, 100))
+	topics.LoadOrStore(mapRequest.Topic, make(chan interface{}, 100))
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func topicHandler(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	topicName := params["topic"]
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	var payload interface{}
+	err = json.Unmarshal(body, &payload)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	topicMapEntry, ok := topics.Load(topicName)
+	if !ok {
+		http.Error(w, fmt.Sprintf("Topic %s does not exist", topicName), http.StatusInternalServerError)
+		return
+	}
+
+	topic := topicMapEntry.(chan interface{})
+	topic <- payload
 
 	w.WriteHeader(http.StatusCreated)
 }
@@ -48,7 +78,11 @@ func mapHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	port := os.Getenv("PORT")
 
-	http.HandleFunc("/map", mapHandler)
+	rtr := mux.NewRouter()
 
+	rtr.HandleFunc("/map", mapHandler).Methods("POST")
+	rtr.HandleFunc("/topic/{topic:[a-z]+}", topicHandler).Methods("POST") // TODO: update regex?
+
+	http.Handle("/", rtr)
 	http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
 }
