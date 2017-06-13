@@ -1,2 +1,5 @@
 package: github.com/teddyking/hottopic
-import: []
+import:
+- package: golang.org/x/sync
+  subpackages:
+  - syncmap

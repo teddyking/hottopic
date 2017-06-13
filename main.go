@@ -6,10 +6,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+
+	"golang.org/x/sync/syncmap"
 )
 
 var (
 	appsToTopics map[string]string
+	topics       *syncmap.Map
 )
 
 type MapRequest struct {
@@ -19,6 +22,7 @@ type MapRequest struct {
 
 func init() {
 	appsToTopics = make(map[string]string)
+	topics = &syncmap.Map{}
 }
 
 func mapHandler(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +40,7 @@ func mapHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	appsToTopics[mapRequest.App] = mapRequest.Topic
+	topics.LoadOrStore(mapRequest.Topic, make(chan MapRequest, 100))
 
 	w.WriteHeader(http.StatusCreated)
 }
